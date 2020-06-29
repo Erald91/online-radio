@@ -1,0 +1,4 @@
+# Exculde node_modules dependencies from the GIT repo  
+/node_modules
+/build
+.env

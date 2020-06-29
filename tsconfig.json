@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "module": "commonjs",
+    "target": "ES2017",
+    "rootDir": "src",
+    "outDir": "build"
+  }
+}
