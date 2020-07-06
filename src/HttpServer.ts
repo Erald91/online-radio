@@ -3,6 +3,7 @@ import * as express from 'express';
 import { IError } from './errors/IError';
 import AppConfig from './configs/appConfig';
 import { AddressInfo } from 'net';
+import Streams from './streams/Streams';
 
 export default () => {
   const app: express.Application = express();
@@ -13,6 +14,10 @@ export default () => {
 
   app.get('/', (req: express.Request, res: express.Response) => {
     res.status(200).end(`Kodek Online Streaming Radio`);
+  });
+
+  app.get('/stream', (req: express.Request, res: express.Response) => {
+    Streams.addSink(res);
   });
 
   app.use((err: IError, req: express.Request, res: express.Response, next: express.NextFunction) => {
