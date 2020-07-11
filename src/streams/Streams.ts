@@ -9,8 +9,11 @@ export default (() => {
   const _addSink = (stream: Writable) => {
     sinkStreams.push(SinkStream(stream));
   };
+  const _getSinkStreams = () => {
+    return sinkStreams;
+  }
   return {
-    sinkStreams,
+    getSinkStreams: _getSinkStreams,
     dropSink: _dropSink,
     addSink: _addSink
   }

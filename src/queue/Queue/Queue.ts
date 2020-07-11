@@ -36,12 +36,12 @@ export const Queue = <T>(
   Queue.on('drained', () => {
     console.log(`[Queue][${name}]:QueueDrained`);
   });
-  const addJob = (job: IJob<T>) => {
+  const _addJob = (job: IJob<T>) => {
     const { name, data, options } = job;
     return Queue.add(name || null, data, options);
   };
   return {
     queue: Queue,
-    addJob
+    addJob: _addJob
   };
 };

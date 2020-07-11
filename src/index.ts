@@ -6,3 +6,5 @@ import Events from './events';
 Events.registerListeners();
 Queue.init();
 HttpServer();
+
+Queue.getQueues().audioQueue.startTestPlaylist()

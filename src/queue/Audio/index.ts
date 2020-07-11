@@ -14,4 +14,17 @@ export const ProcessAudioJob = (data: IQueueData, options?: Bull.JobOptions): IJ
   return BaseJob.call(null, data, 'processAudio', options);
 };
 
-export default () => Queue<IQueueData>(QUEUE_NAME, Processors);
+export default () => {
+  const queue = Queue<IQueueData>(QUEUE_NAME, Processors);
+
+  const _startTestPlaylist = () => {
+    queue.addJob(ProcessAudioJob({audioFilePath: `${__dirname}/../../storage/track_1.mp3`}));
+    queue.addJob(ProcessAudioJob({audioFilePath: `${__dirname}/../../storage/track_2.mp3`}));
+    queue.addJob(ProcessAudioJob({audioFilePath: `${__dirname}/../../storage/track_3.mp3`}));
+  }
+
+  return {
+    queue,
+    startTestPlaylist: _startTestPlaylist
+  }
+};
