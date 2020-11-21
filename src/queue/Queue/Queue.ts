@@ -1,6 +1,6 @@
 import * as Bull from 'bull';
 import AppConfig from '../../configs/appConfig';
-import { IQueue, IProcessBag, IJobName } from './IQueue';
+import { IQueue, IProcessBag } from './IQueue';
 import { IJob } from '../Job/IJob';
 
 export const Queue = <T>(
