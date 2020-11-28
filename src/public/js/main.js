@@ -2,6 +2,8 @@
   window.onload = () => {
     const socket = io();
 
+    const chunkReader = window.chunkReader;
+
     socket.on('connect', () => {
       console.log('Connection established with server...')
     });
@@ -16,6 +18,10 @@
 
     socket.on('disconnect', () => {
       console.log('Socket disconnected from server...');
+    });
+
+    socket.on('stream', ({chunk, stat}) => {
+      chunkReader.enqueue(chunk);
     });
   };
 })();
