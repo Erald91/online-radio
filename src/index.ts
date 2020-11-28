@@ -7,4 +7,4 @@ Events.registerListeners();
 Queue.init();
 HttpServer();
 
-Queue.getQueues().audioQueue.startTestPlaylist()
+Queue.getQueues().audioQueue.startTestPlaylist();

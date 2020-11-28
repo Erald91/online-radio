@@ -18,9 +18,8 @@ export default () => {
   const queue = Queue<IQueueData>(QUEUE_NAME, Processors);
 
   const _startTestPlaylist = () => {
-    queue.addJob(ProcessAudioJob({audioFilePath: `${__dirname}/../../storage/track_1.mp3`}));
-    queue.addJob(ProcessAudioJob({audioFilePath: `${__dirname}/../../storage/track_2.mp3`}));
-    queue.addJob(ProcessAudioJob({audioFilePath: `${__dirname}/../../storage/track_3.mp3`}));
+    queue.addJob(ProcessAudioJob({audioFilePath: `${__dirname}/../../storage/track_1.wav`}));
+    queue.addJob(ProcessAudioJob({audioFilePath: `${__dirname}/../../storage/track_2.wav`}));
   }
 
   return {

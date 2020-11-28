@@ -40,8 +40,12 @@ export const Queue = <T>(
     const { name, data, options } = job;
     return Queue.add(name || null, data, options);
   };
+  const _flush = () => {
+    Queue.empty();
+  };
   return {
     queue: Queue,
-    addJob: _addJob
+    addJob: _addJob,
+    flush: _flush
   };
 };

@@ -4,7 +4,8 @@ import { IJob } from '../Job/IJob';
 
 export type IQueue<T> = {
   queue: Bull.Queue;
-  addJob: (job: IJob<T>) => Promise<Bull.Job>
+  addJob: (job: IJob<T>) => Promise<Bull.Job>;
+  flush: () => void;
 };
 
 export type IJobName = IAudioJob;
