@@ -8,7 +8,6 @@ const DEFAULT_SOCKET_OPTIONS: Partial<ServerOptions> = Object.freeze({});
 
 export default (() => {
   let _server: SocketServer = null;
-  let connectedSockets: Array<Socket> = [];
   const _init = (httpServer: Server, options: Partial<ServerOptions> = {}) => {
     _server = new SocketServer(httpServer, {...DEFAULT_SOCKET_OPTIONS, ...options});
     // Define Redis adapter for the Socket server instance
@@ -19,27 +18,13 @@ export default (() => {
     _server.on('connection', (socket: Socket) => {
       socket.on('disconnect', () => {
         console.log(`[SOCKET]|Client#${socket.id} disconnected...`);
-        // In case socket is disconnected we should remove from the list
-        _removeSocket(socket.id);
       });
-      // Add socket to the list of saved connections
-      _addSocket(socket);
+      console.log(`[SOCKET]|Client#${socket.id} connected...`)
     });
-  }
-  const _addSocket = (socket: Socket) => {
-    console.log(`[SOCKET]|Client#${socket.id} connected...`)
-    connectedSockets.push(socket);
   };
-  const _removeSocket = (socketId: string) => {
-    connectedSockets = connectedSockets.reduce(
-      (collection: Array<Socket>, socket: Socket) =>
-        socket.id !== socketId ? collection.concat([socket]) : collection,
-        []
-      );
-  };
-  const _getConnectedSockets = () => connectedSockets;
+  const _getServer = () => _server; 
   return {
     init: _init,
-    getConnectedSockets: _getConnectedSockets
+    getServer: _getServer
   };
 })();
