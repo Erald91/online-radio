@@ -2,7 +2,7 @@
   window.onload = () => {
     const socket = io();
 
-    const chunkReader = window.chunkReader;
+    const chunkReader = window.ChunkReader();
 
     socket.on('connect', () => {
       console.log('Connection established with server...')

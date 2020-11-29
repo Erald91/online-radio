@@ -6,33 +6,32 @@
     return newBuff;
   };
 
-  // Set a default threshold for the buffer in BYTES so we now
-  // when we have enough data to start playing or when we need 
-  // to stop to wait for more
-  const BUFFER_THRESHOLD =  10000; // IN BYTES
-
-  const ReaderAudioBuffer = (bytes, audioBuffer) => ({bytes, audioBuffer});
-
-  const ChunkReader = () => {
+  const ChunkReader = (numberOfChannels = 2, sampleRate = 44800) => {
     // Keep reference of AudioContext instance to handle the audio graph
     const ctx = new AudioContext();
+    // Define the sample rate of the ctx
+    ctx.sampleRate = sampleRate;
     // Queue of ArrayBuffers presenting chunks of the streaming audio file
     let audioBuffers = [];
     // Create gain node that will allow to control the amplitude of the sound
     let gain = ctx.createGain();
+    // Define initial value of the gain node to equal to '1'
     gain.gain.value = 1;
-    let source = null
+    let source = null;
+    // Define initial value of the last 'position' in time where the other node should proceed
+    let lastNodeEndTime = null;
 
     const playAudioBuffer = (audioBuffer) => {
+      lastNodeEndTime = lastNodeEndTime === null ? ctx.currentTime : lastNodeEndTime;
       source = ctx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(gain);
       gain.connect(ctx.destination);
-      source.start(0);
-      source.addEventListener('ended', () => dequeueBuffer());
+      source.start(lastNodeEndTime);
+      lastNodeEndTime += audioBuffer.duration;
     };
 
-    const withWavHeader = (data, numberOfChannels, sampleRate) => {
+    const withWavHeader = (data) => {
       const header = new ArrayBuffer(44);
   
       const d = new DataView(header);
@@ -70,41 +69,27 @@
       return mergeArrayBuffers(header, data);
     };
 
-    const hasEnoughBufferedDataToResume = () => {
-      let total = 0;
-      for (const playerBuffer of audioBuffers) {
-        total += playerBuffer.bytes;
-        if (total >= BUFFER_THRESHOLD) {
-          return true;
-        }
-      }
-      return false
-    };
-
-    const dequeueBuffer = () => {
-      const nextPlayerBuffer = audioBuffers.pop();
-      console.log('Play chunk', nextPlayerBuffer);
-      playAudioBuffer(nextPlayerBuffer.audioBuffer);
+    const dequeueBuffer = (callback) => {
+      // Remove portion of samples that will be used for the next audio node
+      const pcmData = audioBuffers.splice(-(sampleRate - 44));
+      const pcmDataWithHeader = withWavHeader(Uint8Array.from(pcmData));
+      ctx.decodeAudioData(pcmDataWithHeader.buffer, (audioBuffer) => {
+        callback(audioBuffer);
+      });
     };
 
     const enqueueBuffer = (chunk) => {
-      const chunkWithHeader = withWavHeader(chunk, 2, 44800);
-      const bytes = chunkWithHeader.byteLength;
-      ctx.decodeAudioData(chunkWithHeader.buffer, (audioBuffer) => {
-        // Include audioBuffer with related data to the queue ready to be processed
-        audioBuffers.unshift(ReaderAudioBuffer(bytes, audioBuffer));
-        const canPlay = hasEnoughBufferedDataToResume();
-        console.log('Decode data', canPlay, source);
-        if (canPlay && !source) {
-          return dequeueBuffer();
-        }
-        console.log('Not enough data to play, waiting ...');
-      });
+      // Convert ArrayBuffer to 8bit PCM data and serialize all the samples
+      const fromArrayBufferToUintArray = new Uint8Array(chunk);
+      // Push all samples to inner reference buffer so we can keep reference on it
+      audioBuffers.unshift(...fromArrayBufferToUintArray);
+      // Dequeue and schedule next node on the graph to resume as soon the previous has finished 
+      dequeueBuffer((audioBuffer) => playAudioBuffer(audioBuffer));
     };
 
     return {
       enqueue: enqueueBuffer
     };
   };
-  window.chunkReader = ChunkReader();
+  window.ChunkReader = ChunkReader;
 })();
