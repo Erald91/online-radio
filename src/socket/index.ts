@@ -1,10 +1,14 @@
 import { Socket, Server as SocketServer, ServerOptions } from 'socket.io';
+import * as ss from 'socket.io-stream';
 import { RedisClient } from 'redis';
 import { createAdapter } from 'socket.io-redis';
 import { Server } from 'http';
 import appConfig from '../configs/appConfig';
+import Streams from '../streams/Streams';
 
-const DEFAULT_SOCKET_OPTIONS: Partial<ServerOptions> = Object.freeze({});
+const DEFAULT_SOCKET_OPTIONS: Partial<ServerOptions> = Object.freeze({
+  transports: ['websocket', 'polling']
+});
 
 export default (() => {
   let _server: SocketServer = null;
@@ -19,12 +23,14 @@ export default (() => {
       socket.on('disconnect', () => {
         console.log(`[SOCKET]|Client#${socket.id} disconnected...`);
       });
+      const stream = ss.createStream();
+      socket.on('request', () => {
+        ss(socket).emit('stream', Streams.getMainAudioStream().pipe(stream));
+      });
       console.log(`[SOCKET]|Client#${socket.id} connected...`)
     });
   };
-  const _getServer = () => _server; 
   return {
-    init: _init,
-    getServer: _getServer
+    init: _init
   };
 })();

@@ -2,19 +2,16 @@ import * as Bull from 'bull';
 import * as Throttle from 'throttle';
 import * as fs from 'fs';
 import { IProcessBagItem } from '../../Queue/IQueue';
-import SocketService from '../../../socket';
+import Streams from '../../../streams/Streams';
 
 export default {
   jobName: 'processAudio',
   processFunc: async (job: Bull.Job, done: Bull.DoneCallback) => {
-    const playStream = await new Promise((resolve) => {
+    await new Promise((resolve) => {
       console.log('Audio File Path', job.data.audioFilePath);
-      const audioFileStream = fs.createReadStream(job.data.audioFilePath);
-      audioFileStream
+      fs.createReadStream(job.data.audioFilePath)
         .pipe(new Throttle(1536000 / 8))
-        .on('data', chunk => {
-          SocketService.getServer().sockets.emit('stream', {chunk});
-        })
+        .on('data', chunk => Streams.getMainAudioStream().push(chunk))
         .on('end', resolve);
       console.log('Processing audio stream', job.data);
     });

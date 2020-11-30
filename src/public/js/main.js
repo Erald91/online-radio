@@ -5,7 +5,8 @@
     const chunkReader = window.ChunkReader();
 
     socket.on('connect', () => {
-      console.log('Connection established with server...')
+      console.log('Connection established with server...');
+      socket.emit('request', 'lorem ipsum');
     });
 
     socket.on('reconnecting', () => {
@@ -20,8 +21,10 @@
       console.log('Socket disconnected from server...');
     });
 
-    socket.on('stream', ({chunk, stat}) => {
-      chunkReader.enqueue(chunk);
+    ss(socket).on('stream', (stream) => {
+      stream.on('data', (chunk) => {
+        chunkReader.enqueue(chunk);
+      });
     });
   };
 })();
