@@ -6,7 +6,7 @@
     return newBuff;
   };
 
-  const ChunkReader = (numberOfChannels = 2, sampleRate = 44800) => {
+  const ChunkReader = (numberOfChannels = 2, sampleRate = 44800, samplesThreshold = sampleRate * 5) => {
     // Keep reference of AudioContext instance to handle the audio graph
     const ctx = new AudioContext();
     // Define the sample rate of the ctx
@@ -20,6 +20,8 @@
     let source = null;
     // Define initial value of the last 'position' in time where the other node should proceed
     let lastNodeEndTime = null;
+    // Keep track of state when all samples are consumed and buffer is empty
+    let isDrained = true;
 
     const playAudioBuffer = (audioBuffer) => {
       lastNodeEndTime = lastNodeEndTime === null ? ctx.currentTime : lastNodeEndTime;
@@ -28,8 +30,16 @@
       source.connect(gain);
       gain.connect(ctx.destination);
       source.start(lastNodeEndTime);
+      source.addEventListener('ended', onNodeEnded.bind(source));
       lastNodeEndTime += audioBuffer.duration;
     };
+
+    const onNodeEnded = function(currentNode) {
+      if (currentNode === source && !audioBuffers.length) {
+        console.log('Played last audio node and buffer is empty...');
+        isDrained = true;
+      }
+    }
 
     const withWavHeader = (data) => {
       const header = new ArrayBuffer(44);
@@ -83,6 +93,10 @@
       const fromArrayBufferToUintArray = new Uint8Array(chunk);
       // Push all samples to inner reference buffer so we can keep reference on it
       audioBuffers.unshift(...fromArrayBufferToUintArray);
+      if (audioBuffers.length < samplesThreshold && isDrained) {
+        return;
+      }
+      isDrained = false;
       // Dequeue and schedule next node on the graph to resume as soon the previous has finished 
       dequeueBuffer((audioBuffer) => playAudioBuffer(audioBuffer));
     };
