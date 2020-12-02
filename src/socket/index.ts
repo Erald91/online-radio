@@ -19,16 +19,17 @@ export default (() => {
     const subClient = pubClient.duplicate();
     _server.adapter(createAdapter({pubClient, subClient}));
 
-    _server.on('connection', (socket: Socket) => {
-      socket.on('disconnect', () => {
-        console.log(`[SOCKET]|Client#${socket.id} disconnected...`);
-      });
-      const stream = ss.createStream();
-      socket.on('request', () => {
-        ss(socket).emit('stream', Streams.getMainAudioStream().pipe(stream));
-      });
-      console.log(`[SOCKET]|Client#${socket.id} connected...`)
+    _server.on('connection', _handleSocket);
+  };
+  const _handleSocket = (socket: Socket) => {
+    socket.on('disconnect', () => {
+      console.log(`[SOCKET]|Client#${socket.id} disconnected...`);
     });
+    socket.on('request', () => {
+      const stream = ss.createStream();
+      ss(socket).emit('stream', Streams.getMainAudioStream().pipe(stream));
+    });
+    console.log(`[SOCKET]|Client#${socket.id} connected...`);
   };
   return {
     init: _init

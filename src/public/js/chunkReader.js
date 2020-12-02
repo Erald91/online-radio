@@ -6,7 +6,11 @@
     return newBuff;
   };
 
-  const ChunkReader = (numberOfChannels = 2, sampleRate = 44800, samplesThreshold = sampleRate * 5) => {
+  const WAV_HEADER_BYTE_LENGTH = 44;
+
+  const ChunkReader = (numberOfChannels = 2, sampleRate = 44800, durationThreshold = 40) => {
+    // The number of samples that we need to gather from stream 
+    const portionOfSamplesToProcess = sampleRate - WAV_HEADER_BYTE_LENGTH;
     // Keep reference of AudioContext instance to handle the audio graph
     const ctx = new AudioContext();
     // Define the sample rate of the ctx
@@ -20,7 +24,9 @@
     let source = null;
     // Define initial value of the last 'position' in time where the other node should proceed
     let lastNodeEndTime = null;
-    // Keep track of state when all samples are consumed and buffer is empty
+    // Buffer samples until it reaches the correct number based on provided sample rate fo the playback
+    let sampleBuffer = [];
+    // Track if buffer is drained and we need to fetch more samples to resume playing
     let isDrained = true;
 
     const playAudioBuffer = (audioBuffer) => {
@@ -30,19 +36,11 @@
       source.connect(gain);
       gain.connect(ctx.destination);
       source.start(lastNodeEndTime);
-      source.addEventListener('ended', onNodeEnded.bind(source));
       lastNodeEndTime += audioBuffer.duration;
     };
 
-    const onNodeEnded = function(currentNode) {
-      if (currentNode === source && !audioBuffers.length) {
-        console.log('Played last audio node and buffer is empty...');
-        isDrained = true;
-      }
-    }
-
     const withWavHeader = (data) => {
-      const header = new ArrayBuffer(44);
+      const header = new ArrayBuffer(WAV_HEADER_BYTE_LENGTH);
   
       const d = new DataView(header);
   
@@ -51,7 +49,7 @@
       d.setUint8(2, "F".charCodeAt(0));
       d.setUint8(3, "F".charCodeAt(0));
   
-      d.setUint32(4, data.byteLength / 2 + 44, true);
+      d.setUint32(4, data.byteLength / 2 + WAV_HEADER_BYTE_LENGTH, true);
   
       d.setUint8(8, "W".charCodeAt(0));
       d.setUint8(9, "A".charCodeAt(0));
@@ -79,30 +77,38 @@
       return mergeArrayBuffers(header, data);
     };
 
-    const dequeueBuffer = (callback) => {
+    const dequeueBuffer = () => {
+      while (audioBuffers.length) {
+        const audioBuffer = audioBuffers.pop();
+        playAudioBuffer(audioBuffer);
+      }
+      isDrained = true;
+    }
+
+    const enqueueBuffer = (pcmData) => {
       // Remove portion of samples that will be used for the next audio node
-      const pcmData = audioBuffers.splice(-(sampleRate - 44));
       const pcmDataWithHeader = withWavHeader(Uint8Array.from(pcmData));
       ctx.decodeAudioData(pcmDataWithHeader.buffer, (audioBuffer) => {
-        callback(audioBuffer);
+        audioBuffers.unshift(audioBuffer);
+        if (audioBuffers.length >= durationThreshold && isDrained) {
+          isDrained = false;
+          dequeueBuffer();
+        }
       });
     };
 
-    const enqueueBuffer = (chunk) => {
-      // Convert ArrayBuffer to 8bit PCM data and serialize all the samples
-      const fromArrayBufferToUintArray = new Uint8Array(chunk);
-      // Push all samples to inner reference buffer so we can keep reference on it
-      audioBuffers.unshift(...fromArrayBufferToUintArray);
-      if (audioBuffers.length < samplesThreshold && isDrained) {
-        return;
+    const enqueueSamples = (chunk) => {
+      const chunkUint8ArrayPresentation = Uint8Array.from(chunk);
+      sampleBuffer.push(...chunkUint8ArrayPresentation);
+      if (sampleBuffer.length >= portionOfSamplesToProcess) {
+        const unitPlayback = sampleBuffer.slice(0, portionOfSamplesToProcess);
+        sampleBuffer = sampleBuffer.slice(portionOfSamplesToProcess);
+        enqueueBuffer(unitPlayback);
       }
-      isDrained = false;
-      // Dequeue and schedule next node on the graph to resume as soon the previous has finished 
-      dequeueBuffer((audioBuffer) => playAudioBuffer(audioBuffer));
     };
 
     return {
-      enqueue: enqueueBuffer
+      enqueueSamples
     };
   };
   window.ChunkReader = ChunkReader;

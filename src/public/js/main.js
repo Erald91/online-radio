@@ -6,7 +6,7 @@
 
     socket.on('connect', () => {
       console.log('Connection established with server...');
-      socket.emit('request', 'lorem ipsum');
+      socket.emit('request');
     });
 
     socket.on('reconnecting', () => {
@@ -23,7 +23,7 @@
 
     ss(socket).on('stream', (stream) => {
       stream.on('data', (chunk) => {
-        chunkReader.enqueue(chunk);
+        chunkReader.enqueueSamples(chunk);
       });
     });
   };
