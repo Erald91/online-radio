@@ -6,9 +6,21 @@
     return newBuff;
   };
 
+  const Events = () => {
+    let mapping = {
+      drained: null
+    };
+    const set = (key, func) => key in mapping ? mapping[key] = func : null;
+    const drained = () =>  mapping.drained || null;
+    return {
+      set,
+      drained
+    }
+  };
+
   const WAV_HEADER_BYTE_LENGTH = 44;
 
-  const ChunkReader = (numberOfChannels = 2, sampleRate = 44100, durationThreshold = 10) => {
+  const ChunkReader = (numberOfChannels = 2, sampleRate = 44100, durationThreshold = 5) => {
     // We need to define manually the number of samples based on configured channels so we can mark
     // it as the right 'frequency' to generate 1 second of playback, but based on the Nyquist-Shannon
     // theorem we need the double of the desired frequency that we need to produce
@@ -30,6 +42,8 @@
     let sampleBuffer = [];
     // Track if buffer is drained and we need to fetch more samples to resume playing
     let isDrained = true;
+    // Initiate events mapping for 
+    const events = Events();
 
     const playAudioBuffer = (audioBuffer) => {
       lastNodeEndTime = lastNodeEndTime === null ? ctx.currentTime : lastNodeEndTime;
@@ -85,6 +99,8 @@
         playAudioBuffer(audioBuffer);
       }
       isDrained = true;
+      // Get 'drained' listener and invoke so it can fire properly the event
+      events.drained()();
     }
 
     const enqueueBuffer = (pcmData) => {
@@ -110,8 +126,13 @@
       }
     };
 
+    const on = (event, func) => {
+      events.set(event, func);
+    };
+
     return {
-      enqueueSamples
+      enqueueSamples,
+      on
     };
   };
   window.ChunkReader = ChunkReader;
