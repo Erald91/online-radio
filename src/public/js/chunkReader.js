@@ -8,9 +8,11 @@
 
   const WAV_HEADER_BYTE_LENGTH = 44;
 
-  const ChunkReader = (numberOfChannels = 2, sampleRate = 44800, durationThreshold = 40) => {
-    // The number of samples that we need to gather from stream 
-    const portionOfSamplesToProcess = sampleRate - WAV_HEADER_BYTE_LENGTH;
+  const ChunkReader = (numberOfChannels = 2, sampleRate = 44100, durationThreshold = 10) => {
+    // We need to define manually the number of samples based on configured channels so we can mark
+    // it as the right 'frequency' to generate 1 second of playback, but based on the Nyquist-Shannon
+    // theorem we need the double of the desired frequency that we need to produce
+    const portionOfSamplesToProcess = sampleRate * numberOfChannels * 2;
     // Keep reference of AudioContext instance to handle the audio graph
     const ctx = new AudioContext();
     // Define the sample rate of the ctx
@@ -89,6 +91,7 @@
       // Remove portion of samples that will be used for the next audio node
       const pcmDataWithHeader = withWavHeader(Uint8Array.from(pcmData));
       ctx.decodeAudioData(pcmDataWithHeader.buffer, (audioBuffer) => {
+        // Each AudioBuffer will have the duration of 1 second and the threshold will be measured in seconds
         audioBuffers.unshift(audioBuffer);
         if (audioBuffers.length >= durationThreshold && isDrained) {
           isDrained = false;
