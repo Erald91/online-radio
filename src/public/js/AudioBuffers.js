@@ -6,14 +6,18 @@
     let isDrained = true;
     // Keep reference of the node that's current playing
     let currentNode = null;
+    // Subsribe to events and emit them
+    let events = window.EventEmitter();
 
     const _play = () => {
       // Get the first added audio buffer not yet processed
-      const {data: audioBuffer} = list.head();
-      if (!audioBuffer) {
+      const node = list.head();
+      if (!node) {
         isDrained = true;
+        events.emit('drained');
         return;
       }
+      const {data: audioBuffer} = node;
       currentNode = ctx.createBufferSource();
       currentNode.buffer = audioBuffer;
       if (gain) {
@@ -40,6 +44,7 @@
       // In case buffer is drained and we have enough data to resume playing, we can start playback
       if (isDrained && _checkCurrentDownloadedDuration() > thresholdDuration) {
         isDrained = false;
+        events.emit('ready');
         _play();
       }
     }
@@ -51,7 +56,9 @@
     }
 
     return {
-      enqueue: _enqueue
+      enqueue: _enqueue,
+      on: (name, func) => events.on(name, func),
+      off: (name, func) => events.off(name, func)
     }
   }
   window.AudioBuffers = AudioBuffers;

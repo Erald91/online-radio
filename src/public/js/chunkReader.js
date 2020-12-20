@@ -84,7 +84,9 @@
     };
 
     return {
-      enqueueSamples
+      enqueueSamples,
+      on: (name, func) => audioBuffers.on(name, func),
+      off: (name, func) => audioBuffers.off(name, func)
     };
   };
   window.ChunkReader = ChunkReader;

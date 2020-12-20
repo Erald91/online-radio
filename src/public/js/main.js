@@ -4,6 +4,9 @@
 
     const chunkReader = window.ChunkReader();
 
+    chunkReader.on('drained', () => console.log('Buffer drained!!!'));
+    chunkReader.on('ready', () => console.log('Enough data to resume playback!!!'));
+
     socket.on('connect', () => {
       console.log('Connection established with server...');
       socket.emit('request');
