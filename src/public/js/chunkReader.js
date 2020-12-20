@@ -6,21 +6,9 @@
     return newBuff;
   };
 
-  const Events = () => {
-    let mapping = {
-      drained: null
-    };
-    const set = (key, func) => key in mapping ? mapping[key] = func : null;
-    const drained = () =>  mapping.drained || null;
-    return {
-      set,
-      drained
-    }
-  };
-
   const WAV_HEADER_BYTE_LENGTH = 44;
 
-  const ChunkReader = (numberOfChannels = 2, sampleRate = 44100, durationThreshold = 5) => {
+  const ChunkReader = (numberOfChannels = 2, sampleRate = 44100, thresholdDuration = 5) => {
     // We need to define manually the number of samples based on configured channels so we can mark
     // it as the right 'frequency' to generate 1 second of playback, but based on the Nyquist-Shannon
     // theorem we need the double of the desired frequency that we need to produce
@@ -29,31 +17,14 @@
     const ctx = new AudioContext();
     // Define the sample rate of the ctx
     ctx.sampleRate = sampleRate;
-    // Queue of ArrayBuffers presenting chunks of the streaming audio file
-    let audioBuffers = [];
     // Create gain node that will allow to control the amplitude of the sound
     let gain = ctx.createGain();
     // Define initial value of the gain node to equal to '1'
     gain.gain.value = 1;
-    let source = null;
-    // Define initial value of the last 'position' in time where the other node should proceed
-    let lastNodeEndTime = null;
     // Buffer samples until it reaches the correct number based on provided sample rate fo the playback
     let sampleBuffer = [];
-    // Track if buffer is drained and we need to fetch more samples to resume playing
-    let isDrained = true;
-    // Initiate events mapping for 
-    const events = Events();
-
-    const playAudioBuffer = (audioBuffer) => {
-      lastNodeEndTime = lastNodeEndTime === null ? ctx.currentTime : lastNodeEndTime;
-      source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(gain);
-      gain.connect(ctx.destination);
-      source.start(lastNodeEndTime);
-      lastNodeEndTime += audioBuffer.duration;
-    };
+    // Instance of ReaderBuffer to handle chunks playback and graph update
+    const readerBuffer = window.ReaderBuffer(ctx, thresholdDuration, gain);
 
     const withWavHeader = (data) => {
       const header = new ArrayBuffer(WAV_HEADER_BYTE_LENGTH);
@@ -93,26 +64,12 @@
       return mergeArrayBuffers(header, data);
     };
 
-    const dequeueBuffer = () => {
-      while (audioBuffers.length) {
-        const audioBuffer = audioBuffers.pop();
-        playAudioBuffer(audioBuffer);
-      }
-      isDrained = true;
-      // Get 'drained' listener and invoke so it can fire properly the event
-      events.drained()();
-    }
 
     const enqueueBuffer = (pcmData) => {
       // Remove portion of samples that will be used for the next audio node
       const pcmDataWithHeader = withWavHeader(Uint8Array.from(pcmData));
       ctx.decodeAudioData(pcmDataWithHeader.buffer, (audioBuffer) => {
-        // Each AudioBuffer will have the duration of 1 second and the threshold will be measured in seconds
-        audioBuffers.unshift(audioBuffer);
-        if (audioBuffers.length >= durationThreshold && isDrained) {
-          isDrained = false;
-          dequeueBuffer();
-        }
+        readerBuffer.enqueue(audioBuffer);
       });
     };
 
@@ -126,13 +83,8 @@
       }
     };
 
-    const on = (event, func) => {
-      events.set(event, func);
-    };
-
     return {
-      enqueueSamples,
-      on
+      enqueueSamples
     };
   };
   window.ChunkReader = ChunkReader;

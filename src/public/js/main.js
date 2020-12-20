@@ -4,10 +4,6 @@
 
     const chunkReader = window.ChunkReader();
 
-    chunkReader.on('drained', () => {
-      console.log('Player drained!!!');
-    });
-
     socket.on('connect', () => {
       console.log('Connection established with server...');
       socket.emit('request');
