@@ -24,7 +24,7 @@
     // Buffer samples until it reaches the correct number based on provided sample rate fo the playback
     let sampleBuffer = [];
     // Instance of ReaderBuffer to handle chunks playback and graph update
-    const readerBuffer = window.ReaderBuffer(ctx, thresholdDuration, gain);
+    const audioBuffers = window.AudioBuffers(ctx, thresholdDuration, gain);
 
     const withWavHeader = (data) => {
       const header = new ArrayBuffer(WAV_HEADER_BYTE_LENGTH);
@@ -69,7 +69,7 @@
       // Remove portion of samples that will be used for the next audio node
       const pcmDataWithHeader = withWavHeader(Uint8Array.from(pcmData));
       ctx.decodeAudioData(pcmDataWithHeader.buffer, (audioBuffer) => {
-        readerBuffer.enqueue(audioBuffer);
+        audioBuffers.enqueue(audioBuffer);
       });
     };
 
