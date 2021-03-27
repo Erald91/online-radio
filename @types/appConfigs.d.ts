@@ -4,5 +4,10 @@ export type IAppConfigs = {
   redis: {
     port: number;
     host: string;
+  },
+  mongodb: {
+    database: string;
+    host: string;
+    port: string;
   }
 };

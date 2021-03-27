@@ -3,6 +3,7 @@
     "allowJs": true,
     "module": "commonjs",
     "target": "ES2017",
+    "esModuleInterop": false,
     "rootDir": "src",
     "outDir": "build"
   }
