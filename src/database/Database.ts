@@ -2,6 +2,7 @@ import {MongoClient, MongoClientOptions} from 'mongodb';
 import appConfigs from '../configs/appConfig';
 import SongsRepository from './repositories/SongsRepository';
 import PlaylistsRepository from './repositories/PlaylistsRepository';
+import SchedulesRepository from './repositories/SchedulesRepository';
 
 // Connection URL string to ensure proper connection with MongoDB server
 const CONNECTION_URL = `mongodb://${appConfigs.mongodb.host}:${appConfigs.mongodb.port}/${appConfigs.mongodb.database}`;
@@ -16,6 +17,7 @@ const DEFAULT_OPTIONS: MongoClientOptions = {
 export default (() => {
   let songsRepository = null;
   let playlistsRepository = null;
+  let schedulesRepository = null;
 
   let client: MongoClient = new MongoClient(CONNECTION_URL, {...DEFAULT_OPTIONS});
   client.on('serverOpening', () => {
@@ -38,6 +40,7 @@ export default (() => {
       // Initiate repositories
       songsRepository = SongsRepository(db);
       playlistsRepository = PlaylistsRepository(db);
+      schedulesRepository = SchedulesRepository(db);
     } catch (error) {
       console.log('MongoClient failed connecting with MongoDB', error.stack);
     }
@@ -46,7 +49,10 @@ export default (() => {
     const results = await songsRepository.addSeedSongs();
     if (results) {
       const songs = Object.values(results.insertedIds);
-      await playlistsRepository.createPlaylist('Seed Playlist', 'Lorem ipsum', songs);
+      const playlist = await playlistsRepository.createPlaylist('Seed Playlist', 'Lorem ipsum', songs);
+      if (playlist) {
+        await schedulesRepository.createSchedule(String(playlist.insertedId), true);
+      }
     }
   };
   const _close = () => {

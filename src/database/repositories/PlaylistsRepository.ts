@@ -8,7 +8,7 @@ export default (db: Db) => {
     try {
       return await _model.insertOne({title, description, songs});
     } catch (error) {
-      console.log(`Coulddn't create playlist: `, error.stack);
+      console.log(`Couldn't create playlist: `, error.stack);
       return null;
     }
   };
