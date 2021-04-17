@@ -2,7 +2,7 @@ import { Db } from 'mongodb';
 import Song from '../models/Song';
 
 export default (db: Db) => {
-  const model = Song(db);
+  const _model = Song(db);
 
   const _addSeedSongs = async () => {
     const seeds = [
@@ -33,14 +33,17 @@ export default (db: Db) => {
       }
     ];
     try {
-      await model.insertMany(seeds);
+      const results = await _model.insertMany(seeds);
       console.log(`Seed songs added successfully`);
+      return results;
     } catch (error) {
       console.log(`Couldn't add seeds songs`, error.stack);
+      return null;
     }
   }
 
   return {
-    addSeedSongs: _addSeedSongs 
+    addSeedSongs: _addSeedSongs,
+    model: _model
   }
 };
