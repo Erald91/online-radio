@@ -25,7 +25,7 @@ const Collection = (collection: MongoCollection, schema: IDocumentSchema) => {
     try {
       // Make validation per document
       _validateDocument(document);
-      await collection.insertOne(document);
+      return collection.insertOne(document);
     } catch (error) {
       return Promise.reject(error);
     }
@@ -47,7 +47,7 @@ const Collection = (collection: MongoCollection, schema: IDocumentSchema) => {
         // Call recursively to process documents in the queue
         validateDocuments(documents);
       })([...documents]);
-      await collection.insertMany(documents);
+      return collection.insertMany(documents);
     } catch (error) {
       return Promise.reject(error)
     }
