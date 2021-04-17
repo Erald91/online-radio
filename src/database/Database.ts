@@ -1,5 +1,6 @@
 import {MongoClient, MongoClientOptions} from 'mongodb';
 import appConfigs from '../configs/appConfig';
+import SongsRepository from './repositories/SongsRepository';
 
 // Connection URL string to ensure proper connection with MongoDB server
 const CONNECTION_URL = `mongodb://${appConfigs.mongodb.host}:${appConfigs.mongodb.port}/${appConfigs.mongodb.database}`;
@@ -11,8 +12,10 @@ const DEFAULT_OPTIONS: MongoClientOptions = {
   connectTimeoutMS: 5000 // the timeout to wait until a connection is marked as failed
 };
 
-export default ((options: Partial<MongoClientOptions> = {}) => {
-  let client: MongoClient = new MongoClient(CONNECTION_URL, {...DEFAULT_OPTIONS, ...options});
+export default (() => {
+  let songsRepository = null;
+
+  let client: MongoClient = new MongoClient(CONNECTION_URL, {...DEFAULT_OPTIONS});
   client.on('serverOpening', () => {
     console.log('MongoClient ready for potential server connection!!!');
   });
@@ -22,22 +25,33 @@ export default ((options: Partial<MongoClientOptions> = {}) => {
   client.on('topologyOpening', () => {
     console.log('MongoClient attempting on topology connection!!!');
   });
-  const _init = async () => {
+  const _init = async (seed: boolean = false) => {
     try {
       // Attempt connection to the server
       await client.connect();
+      const db = client.db();
       // Verify connection with database
-      const db = await client.db().command({ ping: 1});
+      await db.command({ ping: 1});
       console.log('MongoClient successfully connected with database!!!');
+      // Initiate repositories
+      songsRepository = SongsRepository(db);
+      // In case 'seed' flag is provided we need to seed preliminary data
+      if (seed) {
+        _seed();
+      }
     } catch (error) {
       console.log('MongoClient failed connecting with MongoDB', error.stack);
     }
+  };
+  const _seed = async () => {
+    await songsRepository.addSeedSongs();
   };
   const _close = () => {
     return client.close();
   }
   return {
     init: _init,
+    seed: _seed,
     close: _close
   }
 })();
