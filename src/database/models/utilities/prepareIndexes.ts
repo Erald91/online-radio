@@ -1,5 +1,5 @@
 import { pipe, filter, map, concat } from '../../../helpers/common';
-import { getIterableSchemaFields, getUniqueFields, parseFieldsToIndexes, addIndexOptions } from './schema';
+import { getIterableSchemaFields, getUniqueFields, parseFieldsToIndexes, addIndexOptions, parseCompoundIndexes } from './schema';
 import { IDocumentSchema, IModelOptions } from '../helpers/BaseModel';
 
 export default (schema: IDocumentSchema, modelOptions: IModelOptions) => {
@@ -7,9 +7,12 @@ export default (schema: IDocumentSchema, modelOptions: IModelOptions) => {
     getIterableSchemaFields,
     filter(getUniqueFields),
     map(parseFieldsToIndexes),
-    map(addIndexOptions({unique: true, background: modelOptions.buildIndexesInBackground})),
+    map(addIndexOptions({unique: true, background: modelOptions.buildIndexesInBackground || false})),
     concat(
-      map(addIndexOptions({background: modelOptions.buildIndexesInBackground}))(modelOptions.indexes || [])
+      pipe(
+        map(parseCompoundIndexes),
+        map(addIndexOptions({background: modelOptions.buildIndexesInBackground || false}))
+      )(modelOptions.indexes || [])
     )
   )(schema);
 };

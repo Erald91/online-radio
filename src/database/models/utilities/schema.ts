@@ -1,4 +1,4 @@
-import { IDocumentFieldOptions, IDocumentSchema, IDocumentType} from '../helpers/BaseModel';
+import { IDocumentFieldOptions, IDocumentSchema, IDocumentType, IIndexConfig} from '../helpers/BaseModel';
 import { IndexSpecification } from 'mongodb';
 import { objectEntries } from '../../../helpers/common';
 
@@ -8,7 +8,8 @@ export const getIterableSchemaFields = (schema: IDocumentSchema): Array<[string,
 
 // Mapping
 export const parseFieldsToIndexes = (iterable: [string, IDocumentFieldOptions]): IndexSpecification => ({key: {[iterable[0]]: 1}});
-export const addIndexOptions = (options: Partial<IndexSpecification> = {}) => (input: object) => ({...input, options});
+export const addIndexOptions = (options: Partial<IndexSpecification> = {}) => (input: object) => ({...input, ...options});
+export const parseCompoundIndexes = (config: IIndexConfig) => ({key: config});
 
 // Filtering
 export const getUniqueFields = (iterable: [string, IDocumentFieldOptions]) => iterable[1].unique;
