@@ -25,6 +25,9 @@ export default (document: object, schema: IDocumentSchema) => {
       case IDocumentType.String:
         hasMissMatch = !isNull(value) && typeof value !== 'string' ? true : false;
         break;
+      case IDocumentType.Date:
+        hasMissMatch = !isNull(value) && !(value instanceof Date) ? true : false;
+        break;
       default:
         hasMissMatch = true;
     }

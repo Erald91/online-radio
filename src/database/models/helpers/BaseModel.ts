@@ -6,7 +6,8 @@ export enum IDocumentType {
   String,
   Number,
   Array,
-  Boolean
+  Boolean,
+  Date
 };
 
 export type IDocumentFieldOptions = {
@@ -44,7 +45,7 @@ const BaseModel = (name: string, schema: IDocumentSchema, modelOptions: IModelOp
       if (err) {
         console.error(`Indexes failed to be created for collection ${name}.`, err.stack);
       } else {
-        console.log(`Indexes created successfully for collection ${name}.`, err.stack);
+        console.log(`Indexes created successfully for collection ${name}.`);
       }
     });
   }
