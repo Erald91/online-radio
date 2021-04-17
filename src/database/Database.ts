@@ -1,6 +1,7 @@
 import {MongoClient, MongoClientOptions} from 'mongodb';
 import appConfigs from '../configs/appConfig';
 import SongsRepository from './repositories/SongsRepository';
+import PlaylistsRepository from './repositories/PlaylistsRepository';
 
 // Connection URL string to ensure proper connection with MongoDB server
 const CONNECTION_URL = `mongodb://${appConfigs.mongodb.host}:${appConfigs.mongodb.port}/${appConfigs.mongodb.database}`;
@@ -14,6 +15,7 @@ const DEFAULT_OPTIONS: MongoClientOptions = {
 
 export default (() => {
   let songsRepository = null;
+  let playlistsRepository = null;
 
   let client: MongoClient = new MongoClient(CONNECTION_URL, {...DEFAULT_OPTIONS});
   client.on('serverOpening', () => {
@@ -25,7 +27,7 @@ export default (() => {
   client.on('topologyOpening', () => {
     console.log('MongoClient attempting on topology connection!!!');
   });
-  const _init = async (seed: boolean = false) => {
+  const _init = async () => {
     try {
       // Attempt connection to the server
       await client.connect();
@@ -35,16 +37,17 @@ export default (() => {
       console.log('MongoClient successfully connected with database!!!');
       // Initiate repositories
       songsRepository = SongsRepository(db);
-      // In case 'seed' flag is provided we need to seed preliminary data
-      if (seed) {
-        _seed();
-      }
+      playlistsRepository = PlaylistsRepository(db);
     } catch (error) {
       console.log('MongoClient failed connecting with MongoDB', error.stack);
     }
   };
   const _seed = async () => {
-    await songsRepository.addSeedSongs();
+    const results = await songsRepository.addSeedSongs();
+    if (results) {
+      const songs = Object.values(results.insertedIds);
+      await playlistsRepository.createPlaylist('Seed Playlist', 'Lorem ipsum', songs);
+    }
   };
   const _close = () => {
     return client.close();

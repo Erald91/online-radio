@@ -7,6 +7,6 @@ import Database from './database/Database';
 (() => {
   Events.registerListeners();
   Queue.init();
-  Database.init(true);
+  Database.init();
   HttpServer();
 })();
