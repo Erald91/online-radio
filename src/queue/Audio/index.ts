@@ -18,13 +18,17 @@ const ProcessAudioJob = (data: IQueueData, options?: Bull.JobOptions): IJob<IQue
 export default () => {
   const queue = Queue<IQueueData>(QUEUE_NAME, Processors);
 
-  const _addJob = (data: IQueueData, options?: Bull.JobOptions): Promise<Bull.Job<IQueueData>> => {
-    return queue.addJob(ProcessAudioJob(data, options));
+  const _addJob = (data: IQueueData, options: Bull.JobOptions = {}): Promise<Bull.Job<IQueueData>> => {
+    return queue.addJob(ProcessAudioJob(data, {removeOnComplete: true, removeOnFail: true, ...options}));
   };
 
   queue.queue.on('drained', () => {
     console.log(`Audio queue drained from all song jobs...`);
     monitorPlaylistActivity(true);
+  });
+
+  queue.queue.on('cleaned', () => {
+    console.log(`Audio queue cleaned from all waiting and active jobs...`);
   });
 
   return {
