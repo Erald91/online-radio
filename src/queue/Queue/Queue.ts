@@ -41,7 +41,7 @@ export const Queue = <T>(
     return Queue.add(name || null, data, options);
   };
   const _flush = () => {
-    Queue.empty();
+    return Queue.empty();
   };
   return {
     queue: Queue,
