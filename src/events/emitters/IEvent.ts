@@ -1,3 +1,3 @@
-import { SinkDropEvent } from './streams/sinkDrop';
+import { IMonitorPlaylistActivity } from './monitorPlaylistActivity';
 
-export type IEvent = SinkDropEvent;
+export type IEvent = IMonitorPlaylistActivity;

@@ -1,11 +1,8 @@
 import { IEventListenerMap } from './IListener';
-import { dropSinkStream } from './streams/dropSinkStream';
 
 export default [
   {
-    event: 'Sink:Drop',
-    listeners: [
-      dropSinkStream
-    ]
+    event: 'MonitorPlaylistActivity',
+    listeners: []
   }
 ] as Array<IEventListenerMap>;
