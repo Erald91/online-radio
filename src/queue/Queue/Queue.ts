@@ -40,8 +40,13 @@ export const Queue = <T>(
     const { name, data, options } = job;
     return Queue.add(name || null, data, options);
   };
-  const _flush = () => {
-    return Queue.empty();
+  const _flush = async () => {
+    await Queue.clean(0, 'wait');
+    await Queue.clean(0, 'delayed');
+    await Queue.clean(0, 'active');
+    await Queue.clean(0, 'completed');
+    await Queue.clean(0, 'failed');
+    await Queue.empty();
   };
   return {
     queue: Queue,
