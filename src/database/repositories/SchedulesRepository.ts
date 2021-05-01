@@ -1,8 +1,8 @@
 import { Db } from 'mongodb';
 import Schedule, { IScheduleStatus } from '../models/Schedule';
 
-export default (db: Db) => {
-  const _model = Schedule(db);
+export default async (db: Db) => {
+  const _model = await Schedule(db);
 
   const _createSchedule = async (playlistId: string, repeat: boolean = false) => {
     try {
@@ -13,13 +13,12 @@ export default (db: Db) => {
     }
   };
 
-  const _hasActiveScheduledPlaylist = async (): Promise<boolean> => {
+  const _getActiveScheduledPlaylist = async (): Promise<object> => {
     try {
-      const active = await _model.findOne({status: IScheduleStatus.Active});
-      return !!active;
+      return await _model.findOne({status: IScheduleStatus.Active});
     } catch (error) {
       console.log(`Couldn't find active playlist: `, error.stack);
-      return false;
+      return null;
     }
   };
 
@@ -31,11 +30,21 @@ export default (db: Db) => {
       return null;
     }
   };
+
+  const _updateScheduledPlaylistStatus = async (playlistId: string, status: IScheduleStatus) => {
+    try {
+      return await _model.updateOne({playlistId}, {$set: {status}});
+    } catch (error) {
+      console.log(`Couldn't update playlist ${playlistId} with new status ${status}: `, error.stack);
+      return null;
+    }
+  };
   
   return {
     createSchedule: _createSchedule,
-    hasActiveScheduledPlaylist: _hasActiveScheduledPlaylist,
+    getActiveScheduledPlaylist: _getActiveScheduledPlaylist,
     getNextPendingScheduledPlaylist: _getNextPendingScheduledPlaylist,
+    updateScheduledPlaylistStatus: _updateScheduledPlaylistStatus,
     model: _model
   };
 };

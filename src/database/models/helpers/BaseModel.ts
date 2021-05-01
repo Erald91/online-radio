@@ -29,7 +29,7 @@ export interface IModelOptions {
   buildIndexesInBackground?: boolean;
 }
 
-const BaseModel = (name: string, schema: IDocumentSchema, modelOptions: IModelOptions = {}) => (db: Db)  => {
+const BaseModel = (name: string, schema: IDocumentSchema, modelOptions: IModelOptions = {}) => async (db: Db)  => {
   const collection = db.collection(name);
 
   if (!hasValidSchema(schema)) {
@@ -41,13 +41,12 @@ const BaseModel = (name: string, schema: IDocumentSchema, modelOptions: IModelOp
   console.log('Prepared indexes', indexes);
   // Check if we have enough indexes data to proceed with creation
   if (indexes.length) {
-    collection.createIndexes(indexes, (err) => {
-      if (err) {
-        console.error(`Indexes failed to be created for collection ${name}.`, err.stack);
-      } else {
-        console.log(`Indexes created successfully for collection ${name}.`);
-      }
-    });
+    try {
+      await collection.createIndexes(indexes);
+      console.log(`Indexes created successfully for collection ${name}.`);
+    } catch (error) {
+      console.error(`Indexes failed to be created for collection ${name}.`, error.stack);
+    }    
   }
 
   return Collection(collection, schema);

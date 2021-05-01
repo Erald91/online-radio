@@ -1,8 +1,8 @@
-import { Db, ObjectId } from 'mongodb';
+import { Db, ObjectID } from 'mongodb';
 import Playlist from '../models/Playlist';
 
-export default (db: Db) => {
-  const _model = Playlist(db);
+export default async (db: Db) => {
+  const _model = await Playlist(db);
 
   const _createPlaylist = async (title: string, description: string = '', songs: Array<string>) => {
     try {
@@ -15,7 +15,7 @@ export default (db: Db) => {
 
   const _getPlaylistById = async (playlistId: string) => {
     try {
-      return await _model.findOne({_id: playlistId});
+      return await _model.findOne(new ObjectID(playlistId));
     } catch (error) {
       console.log(`Couldn't find playlist with ID: `, playlistId, error.stack);
       return null;

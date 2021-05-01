@@ -1,14 +1,9 @@
-import { Collection as MongoCollection } from 'mongodb';
+import { Collection as MongoCollection, ObjectID } from 'mongodb';
 import { IDocumentSchema } from './BaseModel';
 import { hasAllRequiredFields, hasWrongFieldType, hasNotDefinedFields } from '../utilities';
 
 const Collection = (collection: MongoCollection, schema: IDocumentSchema) => {
-  const _validateDocument = (document: object) => {
-    // Check if all required fields are provided
-    const missingRequiredFields = hasAllRequiredFields(document, schema);
-    if (missingRequiredFields.length) {
-      throw new Error(`The following fields are missing ${missingRequiredFields.join(', ')}.`);
-    }
+  const _validateUpdateFields = (document: object) => {
     // Check if document has fields that are not defined in the schema
     const notDefinedFields = hasNotDefinedFields(document, schema);
     if (notDefinedFields.length) {
@@ -19,6 +14,16 @@ const Collection = (collection: MongoCollection, schema: IDocumentSchema) => {
     if (failedFieldTypeCheck) {
       throw new Error(`Field ${failedFieldTypeCheck[0]} has different value (${failedFieldTypeCheck[1]}) from what defined in the schema.`);
     }
+  };
+
+  const _validateDocument = (document: object) => {
+    // Check if all required fields are provided
+    const missingRequiredFields = hasAllRequiredFields(document, schema);
+    if (missingRequiredFields.length) {
+      throw new Error(`The following fields are missing ${missingRequiredFields.join(', ')}.`);
+    }
+    // Check if any of the provided fields is defined on schema or their type matches with definition
+    _validateUpdateFields(document);
   };
 
   const _insertOne = async (document: object): Promise<any> => {
@@ -56,8 +61,9 @@ const Collection = (collection: MongoCollection, schema: IDocumentSchema) => {
   return {
     insertOne: _insertOne,
     insertMany: _insertMany,
-    findOne: collection.findOne,
-    findMany: collection.find
+    findOne: collection.findOne.bind(collection),
+    findMany: collection.find.bind(collection),
+    updateOne: collection.updateOne.bind(collection)
   }
 };
 

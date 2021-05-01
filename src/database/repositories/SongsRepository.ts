@@ -1,8 +1,8 @@
 import { Db } from 'mongodb';
 import Song from '../models/Song';
 
-export default (db: Db) => {
-  const _model = Song(db);
+export default async (db: Db) => {
+  const _model = await Song(db);
 
   const _addSeedSongs = async () => {
     const seeds = [

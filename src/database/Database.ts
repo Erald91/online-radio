@@ -15,7 +15,7 @@ const DEFAULT_OPTIONS: MongoClientOptions = {
 };
 
 export default (() => {
-  let repositories = {
+  const repositories = {
     songsRepository: null,
     playlistsRepository: null,
     schedulesRepository: null
@@ -37,11 +37,11 @@ export default (() => {
       const db = client.db();
       // Verify connection with database
       await db.command({ ping: 1});
-      console.log('MongoClient successfully connected with database!!!');
       // Initiate repositories
-      repositories.songsRepository = SongsRepository(db);
-      repositories.playlistsRepository = PlaylistsRepository(db);
-      repositories.schedulesRepository = SchedulesRepository(db);
+      repositories.songsRepository = await SongsRepository(db);
+      repositories.playlistsRepository = await PlaylistsRepository(db);
+      repositories.schedulesRepository = await SchedulesRepository(db);
+      console.log('MongoClient successfully connected with database!!!');
     } catch (error) {
       console.log('MongoClient failed connecting with MongoDB', error.stack);
     }
