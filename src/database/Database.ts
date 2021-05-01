@@ -15,10 +15,11 @@ const DEFAULT_OPTIONS: MongoClientOptions = {
 };
 
 export default (() => {
-  let songsRepository = null;
-  let playlistsRepository = null;
-  let schedulesRepository = null;
-
+  let repositories = {
+    songsRepository: null,
+    playlistsRepository: null,
+    schedulesRepository: null
+  };
   let client: MongoClient = new MongoClient(CONNECTION_URL, {...DEFAULT_OPTIONS});
   client.on('serverOpening', () => {
     console.log('MongoClient ready for potential server connection!!!');
@@ -38,20 +39,21 @@ export default (() => {
       await db.command({ ping: 1});
       console.log('MongoClient successfully connected with database!!!');
       // Initiate repositories
-      songsRepository = SongsRepository(db);
-      playlistsRepository = PlaylistsRepository(db);
-      schedulesRepository = SchedulesRepository(db);
+      repositories.songsRepository = SongsRepository(db);
+      repositories.playlistsRepository = PlaylistsRepository(db);
+      repositories.schedulesRepository = SchedulesRepository(db);
     } catch (error) {
       console.log('MongoClient failed connecting with MongoDB', error.stack);
     }
   };
+  const _repositories = () => repositories;
   const _seed = async () => {
-    const results = await songsRepository.addSeedSongs();
+    const results = await repositories.songsRepository.addSeedSongs();
     if (results) {
       const songs = Object.values(results.insertedIds);
-      const playlist = await playlistsRepository.createPlaylist('Seed Playlist', 'Lorem ipsum', songs);
+      const playlist = await repositories.playlistsRepository.createPlaylist('Seed Playlist', 'Lorem ipsum', songs);
       if (playlist) {
-        await schedulesRepository.createSchedule(String(playlist.insertedId), true);
+        await repositories.schedulesRepository.createSchedule(String(playlist.insertedId), true);
       }
     }
   };
@@ -60,6 +62,7 @@ export default (() => {
   }
   return {
     init: _init,
+    repositories: _repositories,
     seed: _seed,
     close: _close
   }

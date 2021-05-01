@@ -42,8 +42,18 @@ export default (db: Db) => {
     }
   }
 
+  const _getSongsByIds = async (ids: Array<string>) => {
+    try {
+      return await _model.findMany({_id: {$in: ids}}).toArray();
+    } catch (error) {
+      console.log(`Couldn't find batch songs for provided IDs`, error.stack);
+      return [];
+    }
+  };
+
   return {
     addSeedSongs: _addSeedSongs,
+    getSongsByIds: _getSongsByIds,
     model: _model
   }
 };

@@ -51,10 +51,13 @@ const Collection = (collection: MongoCollection, schema: IDocumentSchema) => {
     } catch (error) {
       return Promise.reject(error)
     }
-  }
+  };
+
   return {
     insertOne: _insertOne,
-    insertMany: _insertMany
+    insertMany: _insertMany,
+    findOne: collection.findOne,
+    findMany: collection.find
   }
 };
 
