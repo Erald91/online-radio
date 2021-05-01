@@ -14,8 +14,8 @@ export default async (treatActiveAsFinished: boolean = false) => {
   // current active record as finished, or repeat same playlist if repeat flag
   // is defined as well 
   if (treatActiveAsFinished && activeScheduledPlaylist && activeScheduledPlaylist.repeat) {
-    console.log(`Finished streaming playlist ${activeScheduledPlaylist._id} is on repeat and being enabling again...`);
-    return await StreamingService.streamPlaylistById(activeScheduledPlaylist._id);
+    console.log(`Finished streaming playlist ${activeScheduledPlaylist.playlistId} is on repeat and being enabling again...`);
+    return await StreamingService.streamPlaylistById(activeScheduledPlaylist.playlistId);
   }
   if (treatActiveAsFinished && activeScheduledPlaylist && !activeScheduledPlaylist.repeat) {
     console.log(`Finished streaming playlist ${activeScheduledPlaylist._id} marking as finished...`);
