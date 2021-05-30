@@ -2,7 +2,7 @@
   const AudioBuffers = (ctx, thresholdDuration = 5, gain = null) => {
     // Create internal list implementation that will store the audio buffers
     const list = window.LinkedList(null);
-    // Use isDrained flag to determinate if buffer should wait to fill with needed duration to resume 
+    // Use isDrained flag to determinate if buffer should wait to fill with needed duration to resume
     let isDrained = true;
     // Subscribe to events and emit them
     let events = window.EventEmitter();
@@ -10,7 +10,7 @@
     let startTime = ctx.currentTime;
 
     const _play = (audioBuffer) => {
-      let currentNode = ctx.createBufferSource();
+      const currentNode = ctx.createBufferSource();
       currentNode.buffer = audioBuffer;
       if (gain) {
         currentNode.connect(gain);
@@ -42,7 +42,9 @@
         isDrained = false;
         events.emit('ready');
       }
-      _play(audioBuffer);
+      if (!isDrained) {
+        _play(audioBuffer);
+      }
     }
 
     const _checkCurrentDownloadedDuration = () => {
