@@ -1,5 +1,4 @@
 require('dotenv').config();
-import Queue from '../queue';
 import Database from '../database/Database';
 import StreamingService from '../services/StreamingService';
 
@@ -13,7 +12,6 @@ import StreamingService from '../services/StreamingService';
   if (!idArgValue) {
     throw new Error('Argument --id value is missing from the command');
   }
-  Queue.init();
   await Database.init();
   await StreamingService.streamPlaylistById(idArgValue);
   await Database.close();

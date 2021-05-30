@@ -1,9 +1,10 @@
 import * as Bull from 'bull';
 import { Queue } from '../Queue/Queue';
 import Processors from './processors';
-import { IJob } from '../Job/IJob';
 import { Job as BaseJob } from '../Job/Job';
 import { monitorPlaylistActivity } from '../../events/emitters/monitorPlaylistActivity';
+import { IQueue } from '../Queue/IQueue';
+import { extend } from '../../helpers/common';
 
 export const QUEUE_NAME = 'audio-streaming';
 export type IQueueJob = 'processAudio';
@@ -11,15 +12,17 @@ export type IQueueData = {
   audioFilePath: string;
 }
 
-const ProcessAudioJob = (data: IQueueData, options?: Bull.JobOptions): IJob<IQueueData> => {
-  return BaseJob(data, 'processAudio', options);
+type IAudioQueue = {
+  queueSong: (data: IQueueData) => Promise<Bull.Job<IQueueData>>;
+  flush: () => Promise<void>;
 };
 
-export default () => {
-  const queue = Queue<IQueueData>(QUEUE_NAME, Processors);
-
-  const _addJob = (data: IQueueData, options: Bull.JobOptions = {}): Promise<Bull.Job<IQueueData>> => {
-    return queue.addJob(ProcessAudioJob(data, {removeOnComplete: true, removeOnFail: true, ...options}));
+const AudioQueue = (queue: IQueue<IQueueData>): IAudioQueue => {
+  const _queueSong = (
+    data: IQueueData,
+    options: Bull.JobOptions = {removeOnComplete: true, removeOnFail: true}
+  ): Promise<Bull.Job<IQueueData>> => {
+    return queue.addJob(BaseJob(data, 'processAudio', options));
   };
 
   queue.queue.on('drained', () => {
@@ -32,7 +35,9 @@ export default () => {
   });
 
   return {
-    addJob: _addJob,
-    queue: () => queue
-  }
-};
+    queueSong: _queueSong,
+    flush: queue.flush
+  };
+}
+
+export default extend(Queue, AudioQueue)(QUEUE_NAME, Processors);

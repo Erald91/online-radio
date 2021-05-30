@@ -16,11 +16,10 @@ export default (() => {
     if (!songs.length) {
       return console.log(`Couldn't find any songs records for the given playlist.`, playlistId);
     }
-    const {addJob, queue} = Queue.getQueues().audioQueue;
-    const queueInstance = queue();
+    const {queueSong, flush} = Queue.getQueues().audioQueue;
     try {
       // Make sure that all pending jobs are rmoved from the queue
-      await queueInstance.flush();
+      await flush();
       // Create job for each song included in the playlist
       await (async function addSongsOnTheQueue(songs: Array<any>) {
         const song = songs.shift();
@@ -28,7 +27,7 @@ export default (() => {
           return Promise.resolve(null);
         }
         const audioFilePath = song.remote ? song.source : path.join(__dirname, '..', 'storage', song.source);
-        await addJob({audioFilePath});
+        await queueSong({audioFilePath});
         return addSongsOnTheQueue(songs);
       })(songs);
       // Update status of the playlist and mark as 'Active'

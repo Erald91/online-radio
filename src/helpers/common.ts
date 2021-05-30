@@ -1,6 +1,9 @@
 // Pipe functionality
 export const pipe = <T>(...func: Array<Function>) => (data: T) => [...func].reduce((result, func) => func(result), data);
 
+// Extend functionality
+export const extend = (parent: Function, child: Function) => (...args: Array<any>) => child(parent(...args)); 
+
 // Grouping 'filter' related common functionalities
 export const filter = <T>(callback: (item: T, index: number) => boolean) => (collection: Array<T>) => collection.filter(callback);
 export const isTruthy = <T>(item: T) => !!item;
