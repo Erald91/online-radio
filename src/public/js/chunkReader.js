@@ -8,15 +8,15 @@
 
   const WAV_HEADER_BYTE_LENGTH = 44;
 
-  const ChunkReader = (numberOfChannels = 2, sampleRate = 44100, thresholdDuration = 5) => {
+  const ChunkReader = (numberOfChannels = 2) => {
+    // Keep reference of AudioContext instance to handle the audio graph
+    const ctx = new AudioContext();
+    // Audio context sample rate matching with client peripheral device sample rate
+    const sampleRate = ctx.sampleRate;
     // We need to define manually the number of samples based on configured channels so we can mark
     // it as the right 'frequency' to generate 1 second of playback, but based on the Nyquist-Shannon
     // theorem we need the double of the desired frequency that we need to produce
     const portionOfSamplesToProcess = sampleRate * numberOfChannels * 2;
-    // Keep reference of AudioContext instance to handle the audio graph
-    const ctx = new AudioContext();
-    // Define the sample rate of the ctx
-    ctx.sampleRate = sampleRate;
     // Create gain node that will allow to control the amplitude of the sound
     let gain = ctx.createGain();
     // Define initial value of the gain node to equal to '1'
@@ -24,7 +24,7 @@
     // Buffer samples until it reaches the correct number based on provided sample rate fo the playback
     let sampleBuffer = [];
     // Instance of ReaderBuffer to handle chunks playback and graph update
-    const audioBuffers = window.AudioBuffers(ctx, thresholdDuration, gain);
+    const audioBuffers = window.AudioBuffers(ctx, gain);
 
     const withWavHeader = (data) => {
       const header = new ArrayBuffer(WAV_HEADER_BYTE_LENGTH);
