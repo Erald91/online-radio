@@ -8,11 +8,11 @@
 
   const WAV_HEADER_BYTE_LENGTH = 44;
 
-  const ChunkReader = (numberOfChannels = 2) => {
+  const ChunkReader = (numberOfChannels = 2, ctxSampleRate = null) => {
     // Keep reference of AudioContext instance to handle the audio graph
     const ctx = new AudioContext();
     // Audio context sample rate matching with client peripheral device sample rate
-    const sampleRate = ctx.sampleRate;
+    const sampleRate = ctx.sampleRate || ctxSampleRate;
     // We need to define manually the number of samples based on configured channels so we can mark
     // it as the right 'frequency' to generate 1 second of playback, but based on the Nyquist-Shannon
     // theorem we need the double of the desired frequency that we need to produce
@@ -23,8 +23,10 @@
     gain.gain.value = 1;
     // Buffer samples until it reaches the correct number based on provided sample rate fo the playback
     let sampleBuffer = [];
-    // Instance of ReaderBuffer to handle chunks playback and graph update
-    const audioBuffers = window.AudioBuffers(ctx, gain);
+    // Relative 'Start Time' that will mark start of each audio node
+    let startTime = null;
+    // Subscribe to events and emit them
+    const events = window.EventEmitter();
 
     const withWavHeader = (data) => {
       const header = new ArrayBuffer(WAV_HEADER_BYTE_LENGTH);
@@ -64,12 +66,27 @@
       return mergeArrayBuffers(header, data);
     };
 
+    const play = (audioBuffer) => {
+      const currentNode = ctx.createBufferSource();
+      currentNode.buffer = audioBuffer;
+      if (gain) {
+        currentNode.connect(gain);
+        gain.connect(ctx.destination);
+      } else {
+        currentNode.connect(ctx.destination);
+      }
+      if (!startTime) {
+        startTime = ctx.currentTime;
+      }
+      currentNode.start(startTime);
+      startTime += audioBuffer.duration;
+    };
 
     const enqueueBuffer = (pcmData) => {
       // Remove portion of samples that will be used for the next audio node
       const pcmDataWithHeader = withWavHeader(Uint8Array.from(pcmData));
       ctx.decodeAudioData(pcmDataWithHeader.buffer, (audioBuffer) => {
-        audioBuffers.enqueue(audioBuffer);
+        play(audioBuffer);
       });
     };
 
@@ -85,8 +102,8 @@
 
     return {
       enqueueSamples,
-      on: (name, func) => audioBuffers.on(name, func),
-      off: (name, func) => audioBuffers.off(name, func)
+      on: (name, func) => events.on(name, func),
+      off: (name, func) => events.off(name, func)
     };
   };
   window.ChunkReader = ChunkReader;
