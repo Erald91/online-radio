@@ -4,21 +4,13 @@
     const list = window.LinkedList(null);
     // Use isDrained flag to determinate if buffer should wait to fill with needed duration to resume 
     let isDrained = true;
-    // Keep reference of the node that's current playing
-    let currentNode = null;
-    // Subsribe to events and emit them
+    // Subscribe to events and emit them
     let events = window.EventEmitter();
+    // Relative 'Start Time' that will mark start of each audio node
+    let startTime = ctx.currentTime;
 
-    const _play = () => {
-      // Get the first added audio buffer not yet processed
-      const node = list.head();
-      if (!node) {
-        isDrained = true;
-        events.emit('drained');
-        return;
-      }
-      const {data: audioBuffer} = node;
-      currentNode = ctx.createBufferSource();
+    const _play = (audioBuffer) => {
+      let currentNode = ctx.createBufferSource();
       currentNode.buffer = audioBuffer;
       if (gain) {
         currentNode.connect(gain);
@@ -26,16 +18,20 @@
       } else {
         currentNode.connect(ctx.destination);
       }
-      currentNode.start();
+      currentNode.start(startTime);
+      startTime += audioBuffer.duration;
       currentNode.addEventListener('ended', () => {
         _dequeue();
-        currentNode = null;
-        _play();
-      })
+      });
     }
 
     const _dequeue = () => {
-      list.deleteAtBeginning();
+      const audioBuffer = list.deleteAtBeginning();
+      if (audioBuffer) {
+        return;
+      }
+      isDrained = true;
+      events.emit('drained');
     }
 
     const _enqueue = (audioBuffer) => {
@@ -45,8 +41,8 @@
       if (isDrained && _checkCurrentDownloadedDuration() > thresholdDuration) {
         isDrained = false;
         events.emit('ready');
-        _play();
       }
+      _play(audioBuffer);
     }
 
     const _checkCurrentDownloadedDuration = () => {
