@@ -8,7 +8,7 @@
 
   const WAV_HEADER_BYTE_LENGTH = 44;
 
-  const ChunkReader = (numberOfChannels = 2, ctxSampleRate = null) => {
+  const ChunkReader = (numberOfChannels = 2, ctxSampleRate = 44100) => {
     // Keep reference of AudioContext instance to handle the audio graph
     const ctx = new AudioContext();
     // Audio context sample rate matching with client peripheral device sample rate
@@ -25,6 +25,8 @@
     let sampleBuffer = [];
     // Relative 'Start Time' that will mark start of each audio node
     let startTime = null;
+    // Keep reference of last decoded audio buffer
+    let lastdecodedAudioBuffer = null;
     // Subscribe to events and emit them
     const events = window.EventEmitter();
 
@@ -80,13 +82,25 @@
       }
       currentNode.start(startTime);
       startTime += audioBuffer.duration;
+      currentNode.addEventListener('ended', () => {
+        if (lastdecodedAudioBuffer !== audioBuffer) {
+          return;
+        }
+        events.emit('drained');
+        startTime = null;
+      })
     };
 
     const enqueueBuffer = (pcmData) => {
       // Remove portion of samples that will be used for the next audio node
       const pcmDataWithHeader = withWavHeader(Uint8Array.from(pcmData));
       ctx.decodeAudioData(pcmDataWithHeader.buffer, (audioBuffer) => {
-        play(audioBuffer);
+        lastdecodedAudioBuffer = audioBuffer;
+        play(lastdecodedAudioBuffer);
+        if (startTime) {
+          events.emit('playing');
+          isDrained = false;
+        }
       });
     };
 
